@@ -222,15 +222,16 @@ distinctF ::
   (Ord a, Num a) =>
   List a
   -> Optional (List a)
-distinctF l = undefined
-{-  evalT (filtering pred l) S.empty
+distinctF = distF
+  {-
+  evalT (filtering pred l) S.empty
  where pred x = do{
          v <- getT;
          putT $ S.insert x v;
          if x > 100 then Empty
          else Full $  S.notMember x v;
-       }
-  -}
+       } :: StateT (S.Set a) Optional Bool
+-}
 
  
 distF :: (Ord a, Num a) => List a -> Optional (List a)
@@ -253,9 +254,9 @@ data OptionalT f a =
 -- >>> runOptionalT $ (+1) <$> OptionalT (Full 1 :. Empty :. Nil)
 -- [Full 2,Empty]
 instance Functor f => Functor (OptionalT f) where
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (OptionalT f)"
-
+  (<$>) g x = OptionalT $ ((<$>) . (<$>)) g (runOptionalT x)
+    
+    
 -- | Implement the `Applicative` instance for `OptionalT f` given a Monad f.
 --
 -- /Tip:/ Use `onFull` to help implement (<*>).
@@ -281,10 +282,18 @@ instance Functor f => Functor (OptionalT f) where
 -- >>> runOptionalT $ OptionalT (Full (+1) :. Full (+2) :. Nil) <*> OptionalT (Full 1 :. Empty :. Nil)
 -- [Full 2,Empty,Full 3,Empty]
 instance Monad f => Applicative (OptionalT f) where
-  pure =
-    error "todo: Course.StateT pure#instance (OptionalT f)"
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (OptionalT f)"
+  pure x = OptionalT $ pure (Full x)
+
+  -- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
+  (<*>) g x = OptionalT $ do{
+    optG <- runOptionalT g;
+    optX <- runOptionalT x;
+    return $ do{
+      func <- optG;
+      arg  <- optX;
+      return $ func arg
+    }
+  }
 
 -- | Implement the `Monad` instance for `OptionalT f` given a Monad f.
 --
