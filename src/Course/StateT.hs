@@ -198,9 +198,7 @@ distinct' l = eval' (filtering pred l) S.empty
           return $ S.notMember x v
         }
 
-distinct'' :: (Ord a, Num a) =>
- List a
- -> List a
+distinct'' :: (Ord a, Num a) => List a -> List a
 distinct'' l = aux l Nil S.empty
  where aux Nil r _ = reverse r
        aux (a:.as) r v
@@ -222,35 +220,12 @@ distinctF ::
   (Ord a, Num a) =>
   List a
   -> Optional (List a)
-distinctF = undefined
-{-
-
->>:t evalT
-evalT :: Functor f => StateT s f a -> s -> f a
->>:t filtering
-filtering :: Applicative f => (a -> f Bool) -> List a -> f (List a)
-
-
-
-  evalT (filtering pred l) S.empty
-  where pred x = do{
-          v <- getT;
-          putT $ S.insert x v;         
-          if x > 100 then Empty
-          else return $ S.notMember x v
-          }
--}
- -- distF
-  {-
-  evalT (filtering pred l) S.empty
- where pred x = do{
-         v <- getT;
-         putT $ S.insert x v;
-         if x > 100 then Empty
-         else Full $  S.notMember x v;
-       } :: StateT (S.Set a) Optional Bool
--}
-
+distinctF l = evalT (filtering pred l) S.empty  
+ where 
+  pred a = StateT $ \s -> 
+        if a > 100 then Empty
+        else Full (S.notMember a s, S.insert a s)
+                        
  
 distF :: (Ord a, Num a) => List a -> Optional (List a)
 distF l = aux l Nil S.empty
@@ -398,19 +373,35 @@ distinctG ::
   (Integral a, Show a) =>
   List a
   -> Logger Chars (Optional (List a))
-distinctG lst = undefined
+distinctG lst = runOptionalT $ evalT (filtering pred lst) S.empty  
+  where pred x = StateT $ \s -> OptionalT $ 
+          if x > 100 then log1 ("aborting > 100: " ++ (show' x)) Empty
+          else             
+            let 
+            if even x then log1 ("even number: " ++ (show' x)) $ Full (S.notMember x s, S.insert x s)
+            else pure $ Full (S.notMember x s, S.insert x s)
+
+        
+
 {-
-  evalT (filtering pred lst) initial
-  where initial = S.empty
-        pred :: a -> StateT (S.Set a) (OptionalT (Logger Chars) Bool)
-        pred x = do{
-          v <- get;
-          put $ S.insert x v;
-          
-          if (mod x 2 == 0) then log1
-          
-  error "todo: Course.StateT#distinctG"
+filtering :: Applicative f => (a -> f Bool) -> List a -> f (List a)
+runOptionalT :: OptionalT f a -> f (Optional a)
+evalT :: Functor f => StateT s f a -> s -> f a
+data OptionalT (f :: * -> *) a
+  = OptionalT {runOptionalT :: f (Optional a)}
+newtype StateT s (f :: * -> *) a
+  = StateT {runStateT :: s -> f (a, s)}
+
+  OptionaT $ Logger Chars (Bool, S.Set a)
+
+(OptionalT (Logger Chars) (Bool, S.Set a))  =  OptionalT $ Logger Chars Optional (Bool, S.Set a)
+data Logger l a = Logger (List l) a
+
+log1 :: l -> a -> Logger l a
+
 -}
+
+
 onFull ::
   Applicative f =>
   (t -> f (Optional a))
