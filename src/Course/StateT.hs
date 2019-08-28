@@ -376,31 +376,11 @@ distinctG ::
 distinctG lst = runOptionalT $ evalT (filtering pred lst) S.empty  
   where pred x = StateT $ \s -> OptionalT $ 
           if x > 100 then log1 ("aborting > 100: " ++ (show' x)) Empty
-          else             
-            let 
+          else                         
             if even x then log1 ("even number: " ++ (show' x)) $ Full (S.notMember x s, S.insert x s)
             else pure $ Full (S.notMember x s, S.insert x s)
 
-        
-
-{-
-filtering :: Applicative f => (a -> f Bool) -> List a -> f (List a)
-runOptionalT :: OptionalT f a -> f (Optional a)
-evalT :: Functor f => StateT s f a -> s -> f a
-data OptionalT (f :: * -> *) a
-  = OptionalT {runOptionalT :: f (Optional a)}
-newtype StateT s (f :: * -> *) a
-  = StateT {runStateT :: s -> f (a, s)}
-
-  OptionaT $ Logger Chars (Bool, S.Set a)
-
-(OptionalT (Logger Chars) (Bool, S.Set a))  =  OptionalT $ Logger Chars Optional (Bool, S.Set a)
-data Logger l a = Logger (List l) a
-
-log1 :: l -> a -> Logger l a
-
--}
-
+ 
 
 onFull ::
   Applicative f =>
