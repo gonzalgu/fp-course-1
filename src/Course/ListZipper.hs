@@ -701,9 +701,24 @@ instance Applicative MaybeListZipper where
 -- >>> id <<= (zipper [2,1] 3 [4,5])
 -- [[1] >2< [3,4,5],[] >1< [2,3,4,5]] >[2,1] >3< [4,5]< [[3,2,1] >4< [5],[4,3,2,1] >5< []]
 instance Extend ListZipper where
-  (<<=) =
-    error "todo: Course.ListZipper (<<=)#instance ListZipper"
+  f <<= lz = ListZipper ls v rs  
+    where go dir l =
+            case dir l of
+              IsNotZ -> Empty
+              IsZ l' -> Full(l',l')
+          ls = f <$> (unfoldr (go moveLeft) lz)
+          v = f lz
+          rs = f <$> (unfoldr (go moveRight)lz)
+   
+    
 
+{-
+(<<=) :: Extend f => (f a -> b) -> f a -> f b
+(<<=) :: (ListZipper a -> b) -> ListZipper a -> ListZipper b
+unfoldr :: (a -> Optional (b, a)) -> a -> List b
+unfoldr :: (ListZipper a -> Optional(b, ListZipper a)) -> ListZipper a -> List b
+
+-}
 -- | Implement the `Extend` instance for `MaybeListZipper`.
 -- This instance will use the `Extend` instance for `ListZipper`.
 --
@@ -723,8 +738,8 @@ instance Extend MaybeListZipper where
 -- >>> copure (zipper [2,1] 3 [4,5])
 -- 3
 instance Comonad ListZipper where
-  copure =
-    error "todo: Course.ListZipper copure#instance ListZipper"
+  copure (ListZipper _ v _) = v
+    
 
 -- | Implement the `Traversable` instance for `ListZipper`.
 -- This implementation traverses a zipper while running some `Applicative` effect through the zipper.
@@ -736,8 +751,7 @@ instance Comonad ListZipper where
 -- >>> traverse id (zipper [Full 1, Full 2, Full 3] (Full 4) [Empty, Full 6, Full 7])
 -- Empty
 instance Traversable ListZipper where
-  traverse =
-    error "todo: Course.ListZipper traverse#instance ListZipper"
+  traverse f (ListZipper l v r) = ListZipper <$> traverse f l <*> f v <*> traverse f r
 
 -- | Implement the `Traversable` instance for `MaybeListZipper`.
 --
@@ -749,8 +763,8 @@ instance Traversable ListZipper where
 -- >>> traverse id (IsZ (zipper [Full 1, Full 2, Full 3] (Full 4) [Full 5, Full 6, Full 7]))
 -- Full [1,2,3] >4< [5,6,7]
 instance Traversable MaybeListZipper where
-  traverse =
-    error "todo: Course.ListZipper traverse#instance MaybeListZipper"
+  traverse _ IsNotZ = pure IsNotZ
+  traverse f (IsZ lz) = IsZ <$> traverse f lz
 
 -----------------------
 -- SUPPORT LIBRARIES --
