@@ -334,8 +334,8 @@ sepby ::
   Parser a
   -> Parser s
   -> Parser (List a)
-sepby =
-  error "todo: Course.MoreParser#sepby"
+sepby p1 p2 = sepby1 p1 p2 ||| pure Nil 
+  
 
 -- | Write a parser that asserts that there is no remaining input.
 --
@@ -346,8 +346,8 @@ sepby =
 -- True
 eof ::
   Parser ()
-eof =
-  error "todo: Course.MoreParser#eof"
+eof = P $ \i -> if (length i == 0) then Result i () else UnexpectedString i 
+  
 
 -- | Write a parser that produces a character that satisfies all of the given predicates.
 --
@@ -370,8 +370,10 @@ eof =
 satisfyAll ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAll =
-  error "todo: Course.MoreParser#satisfyAll"
+satisfyAll preds = satisfy (and . (sequence preds))
+  
+  
+  
 
 -- | Write a parser that produces a character that satisfies any of the given predicates.
 --
@@ -391,8 +393,8 @@ satisfyAll =
 satisfyAny ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAny =
-  error "todo: Course.MoreParser#satisfyAny"
+satisfyAny preds = satisfy $ or . sequence preds
+ 
 
 -- | Write a parser that parses between the two given characters, separated by a comma character ','.
 --
@@ -420,5 +422,5 @@ betweenSepbyComma ::
   -> Char
   -> Parser a
   -> Parser (List a)
-betweenSepbyComma =
-  error "todo: Course.MoreParser#betweenSepbyComma"
+betweenSepbyComma d1 d2 p = betweenCharTok d1 d2 (sepby p (charTok ','))
+  
