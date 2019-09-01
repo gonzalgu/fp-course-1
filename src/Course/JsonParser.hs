@@ -109,8 +109,20 @@ toSpecialCharacter c =
 -- True
 jsonString ::
   Parser Chars
-jsonString =
-  error "todo: Course.JsonParser#jsonString"
+jsonString = between dqp dqp body
+ where dqp = is $ fromSpecialCharacter DoubleQuote
+       body = list (plain ||| special)
+       plain = noneof "\\\""
+       special =  (is (fromSpecialCharacter Backslash)) *> ((control >>= \c -> cnv c) ||| hexu)
+       
+       cnv c = case toSpecialCharacter c of
+         Empty -> unexpectedCharParser c
+         Full(x) -> valueParser (fromSpecialCharacter x)
+
+               
+control :: Parser Char
+control = oneof "\"\\/bfnrv"
+   
 
 -- | Parse a JSON rational.
 --
@@ -138,8 +150,14 @@ jsonString =
 -- True
 jsonNumber ::
   Parser Rational
-jsonNumber =
-  error "todo: Course.JsonParser#jsonNumber"
+jsonNumber = undefined
+{-
+  P $ \i ->
+     case readFloat i of
+       Empty -> UnexpectedString i
+       Full(x) -> Result x
+  -}     
+  --error "todo: Course.JsonParser#jsonNumber"
 
 -- | Parse a JSON true literal.
 --
@@ -152,8 +170,8 @@ jsonNumber =
 -- True
 jsonTrue ::
   Parser Chars
-jsonTrue =
-  error "todo: Course.JsonParser#jsonTrue"
+jsonTrue = stringTok "true"
+  
 
 -- | Parse a JSON false literal.
 --
@@ -166,8 +184,8 @@ jsonTrue =
 -- True
 jsonFalse ::
   Parser Chars
-jsonFalse =
-  error "todo: Course.JsonParser#jsonFalse"
+jsonFalse = stringTok "false"
+  
 
 -- | Parse a JSON null literal.
 --
@@ -180,8 +198,8 @@ jsonFalse =
 -- True
 jsonNull ::
   Parser Chars
-jsonNull =
-  error "todo: Course.JsonParser#jsonNull"
+jsonNull = stringTok "null" 
+  
 
 -- | Parse a JSON array.
 --
