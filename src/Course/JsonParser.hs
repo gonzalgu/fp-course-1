@@ -150,13 +150,10 @@ control = oneof "\"\\/bfnrv"
 -- True
 jsonNumber ::
   Parser Rational
-jsonNumber = undefined
-{-
-  P $ \i ->
-     case readFloat i of
-       Empty -> UnexpectedString i
-       Full(x) -> Result x
-  -}     
+jsonNumber = P $ \i -> case readFloats i of
+                        Empty -> UnexpectedString i
+                        Full(x,i') -> Result i' x
+
   --error "todo: Course.JsonParser#jsonNumber"
 
 -- | Parse a JSON true literal.
@@ -243,9 +240,9 @@ jsonObject ::
   Parser Assoc
 jsonObject = betweenSepbyComma '{' '}' objBody
   where objBody = do{
-          fieldName <- jsonString;
+          fieldName <- spaces *> jsonString <* spaces;
           _ <- charTok ':';
-          obj <- jsonValue;
+          obj <- spaces *>  jsonValue <* spaces;
           return $ (fieldName, obj)
           }
 
