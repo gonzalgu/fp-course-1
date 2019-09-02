@@ -261,12 +261,12 @@ jsonObject = betweenSepbyComma '{' '}' objBody
 jsonValue ::
   Parser JsonValue
 jsonValue = spaces *> vals
-  where vals = jsonNull *> pure JsonNull
-          ||| jsonTrue *> pure JsonTrue
-          ||| jsonFalse *> pure JsonFalse
-          ||| JsonArray <$> jsonArray
-          ||| JsonString <$> jsonString
-          ||| JsonObject <$> jsonObject
+  where vals = jsonNull     *> pure JsonNull
+          ||| jsonTrue      *> pure JsonTrue
+          ||| jsonFalse     *> pure JsonFalse
+          ||| JsonArray    <$> jsonArray
+          ||| JsonString   <$> jsonString
+          ||| JsonObject   <$> jsonObject
           ||| JsonRational <$> jsonNumber
 
 
@@ -276,5 +276,7 @@ jsonValue = spaces *> vals
 readJsonValue ::
   FilePath
   -> IO (ParseResult JsonValue)
-readJsonValue =
-  error "todo: Course.JsonParser#readJsonValue"
+readJsonValue f = do{
+  content <- readFile $ f;
+  return $ parse jsonValue content
+}
