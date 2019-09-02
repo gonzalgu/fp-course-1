@@ -221,8 +221,8 @@ jsonNull = stringTok "null"
 -- Result >< [JsonTrue,JsonString "abc",JsonArray [JsonFalse]]
 jsonArray ::
   Parser (List JsonValue)
-jsonArray =
-  error "todo: Course.JsonParser#jsonArray"
+jsonArray = betweenSepbyComma '[' ']' jsonValue 
+
 
 -- | Parse a JSON object.
 --
@@ -241,8 +241,13 @@ jsonArray =
 -- Result >xyz< [("key1",JsonTrue),("key2",JsonFalse)]
 jsonObject ::
   Parser Assoc
-jsonObject =
-  error "todo: Course.JsonParser#jsonObject"
+jsonObject = betweenSepbyComma '{' '}' objBody
+  where objBody = do{
+          fieldName <- jsonString;
+          _ <- charTok ':';
+          obj <- jsonValue;
+          return $ (fieldName, obj)
+          }
 
 -- | Parse a JSON value.
 --
@@ -258,8 +263,15 @@ jsonObject =
 -- Result >< [("key1",JsonTrue),("key2",JsonArray [JsonRational (7 % 1),JsonFalse]),("key3",JsonObject [("key4",JsonNull)])]
 jsonValue ::
   Parser JsonValue
-jsonValue =
-   error "todo: Course.JsonParser#jsonValue"
+jsonValue = spaces *> vals
+  where vals = jsonNull *> pure JsonNull
+          ||| jsonTrue *> pure JsonTrue
+          ||| jsonFalse *> pure JsonFalse
+          ||| JsonArray <$> jsonArray
+          ||| JsonString <$> jsonString
+          ||| JsonObject <$> jsonObject
+          ||| JsonRational <$> jsonNumber
+
 
 -- | Read a file into a JSON value.
 --
